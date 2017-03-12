@@ -19,5 +19,23 @@ void Main()
 	
 	var client = new AmazonS3Client(accessKey, secretAccessKey, new AmazonS3Config() { RegionEndpoint = RegionEndpoint.EUCentral1 });
 	
-	client.ListBuckets().Dump();
+	var listBucketsResponse = client.ListBuckets();
+	
+	listBucketsResponse.Dump();
+
+	foreach (var bucket in listBucketsResponse.Buckets)
+	{
+		var listObjectsRequest = new ListObjectsRequest();
+		
+		listObjectsRequest.BucketName = bucket.BucketName;
+
+		try
+		{
+			client.ListObjects(listObjectsRequest).Dump();
+		}
+		catch (Exception ex)
+		{
+			ex.Dump();
+		}
+	}
 }

@@ -25,9 +25,10 @@ void Main()
 
 	foreach (var bucket in listBucketsResponse.Buckets)
 	{
-		var listObjectsRequest = new ListObjectsRequest();
-		
-		listObjectsRequest.BucketName = bucket.BucketName;
+		var listObjectsRequest = new ListObjectsRequest
+		{
+			BucketName = bucket.BucketName
+		};
 
 		try
 		{

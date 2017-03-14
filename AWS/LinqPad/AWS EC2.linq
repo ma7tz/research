@@ -16,11 +16,20 @@ void Main()
 
 	var client = new AmazonEC2Client(accessKey, secretAccessKey, RegionEndpoint.EUCentral1);
 	
-	client.DescribeInstances().Dump();
+	var runInstancesRequest = new RunInstancesRequest("ami-af0fc0c0", 1, 1)
+	{
+		InstanceType = InstanceType.T2Micro
+	};
 	
-	client.DescribeImages().Dump();
+	var runInstancesResponse = client.RunInstances(runInstancesRequest);
 	
-//	var startInstancesRequest = new StartInstancesRequest();
-//	
-//	client.StartInstances(startInstancesRequest);
+	runInstancesResponse.Dump();
+
+	var describeInstancesResponse = client.DescribeInstances();
+	
+	describeInstancesResponse.Dump();
+	
+	var terminateInstancesRequest = new TerminateInstancesRequest(runInstancesResponse.Reservation.Instances.Select(i => i.InstanceId).ToList());
+
+	client.TerminateInstances(terminateInstancesRequest);
 }

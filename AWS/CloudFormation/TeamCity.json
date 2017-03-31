@@ -458,8 +458,12 @@
     },
     "Outputs" : {
     	"WebsiteURL" : {
-      	"Description" : "URL for newly created TeamCity Server",
-      	"Value" : { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : [ "TeamCityServer", "PublicDnsName" ]}]] }
+      		"Description" : "URL for newly created TeamCity Server",
+      		"Value" : { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : [ "TeamCityServer", "PublicDnsName" ]}]]}
+      	},
+      	"DatabaseUrl" : {
+      		"Description" : "URL for newly created MySQL Database",
+      		"Value" : { "Fn::Join" : ["", ["mysql://", { "Fn::GetAtt" : [ "MyDB", "PublicDnsName" ]}]]}
+      	}
     }
-  }
 }

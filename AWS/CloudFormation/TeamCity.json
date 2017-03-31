@@ -1,0 +1,465 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Sample Template to setup TeamCity Server in an Amazon Linux instance. **WARNING** This template creates one or more Amazon EC2 instances. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Parameters": {
+        "InstanceType": {
+            "Description": "TeamCity Server EC2 instance type",
+            "Type": "String",
+            "Default": "t2.medium",
+            "AllowedValues": [
+                "t1.micro",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "m4.large",
+                "m4.xlarge",
+                "m4.2xlarge",
+                "m4.4xlarge",
+                "m4.10xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "c3.large",
+                "c3.xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge",
+                "c4.large",
+                "c4.xlarge",
+                "c4.2xlarge",
+                "c4.4xlarge",
+                "c4.8xlarge",
+                "g2.2xlarge",
+                "g2.8xlarge",
+                "r3.large",
+                "r3.xlarge",
+                "r3.2xlarge",
+                "r3.4xlarge",
+                "r3.8xlarge",
+                "i2.xlarge",
+                "i2.2xlarge",
+                "i2.4xlarge",
+                "i2.8xlarge",
+                "d2.xlarge",
+                "d2.2xlarge",
+                "d2.4xlarge",
+                "d2.8xlarge",
+                "hi1.4xlarge",
+                "hs1.8xlarge",
+                "cr1.8xlarge",
+                "cc2.8xlarge",
+                "cg1.4xlarge"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "KeyName": {
+            "Description": "Name of an existing EC2 keypair to enable SSH access to the instances",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+        },
+        "SSHLocation": {
+            "Description": "The IP address range that can be used to SSH to the EC2 instances",
+            "Type": "String",
+            "MinLength": "9",
+            "MaxLength": "18",
+            "Default": "999.999.999.999/16",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+        }
+    },
+    "Mappings": {
+        "AWSInstanceType2Arch": {
+            "t1.micro": {
+                "Arch": "PV64"
+            },
+            "t2.nano": {
+                "Arch": "HVM64"
+            },
+            "t2.micro": {
+                "Arch": "HVM64"
+            },
+            "t2.small": {
+                "Arch": "HVM64"
+            },
+            "t2.medium": {
+                "Arch": "HVM64"
+            },
+            "t2.large": {
+                "Arch": "HVM64"
+            },
+            "m1.small": {
+                "Arch": "PV64"
+            },
+            "m1.medium": {
+                "Arch": "PV64"
+            },
+            "m1.large": {
+                "Arch": "PV64"
+            },
+            "m1.xlarge": {
+                "Arch": "PV64"
+            },
+            "m2.xlarge": {
+                "Arch": "PV64"
+            },
+            "m2.2xlarge": {
+                "Arch": "PV64"
+            },
+            "m2.4xlarge": {
+                "Arch": "PV64"
+            },
+            "m3.medium": {
+                "Arch": "HVM64"
+            },
+            "m3.large": {
+                "Arch": "HVM64"
+            },
+            "m3.xlarge": {
+                "Arch": "HVM64"
+            },
+            "m3.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.large": {
+                "Arch": "HVM64"
+            },
+            "m4.xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.10xlarge": {
+                "Arch": "HVM64"
+            },
+            "c1.medium": {
+                "Arch": "PV64"
+            },
+            "c1.xlarge": {
+                "Arch": "PV64"
+            },
+            "c3.large": {
+                "Arch": "HVM64"
+            },
+            "c3.xlarge": {
+                "Arch": "HVM64"
+            },
+            "c3.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "c3.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "c3.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.large": {
+                "Arch": "HVM64"
+            },
+            "c4.xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "g2.2xlarge": {
+                "Arch": "HVMG2"
+            },
+            "g2.8xlarge": {
+                "Arch": "HVMG2"
+            },
+            "r3.large": {
+                "Arch": "HVM64"
+            },
+            "r3.xlarge": {
+                "Arch": "HVM64"
+            },
+            "r3.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "r3.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "r3.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "hi1.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "hs1.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "cr1.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "cc2.8xlarge": {
+                "Arch": "HVM64"
+            }
+        },
+        "AWSRegionArch2AMI": {
+            "us-east-1": {
+                "PV64": "ami-2a69aa47",
+                "HVM64": "ami-6869aa05",
+                "HVMG2": "ami-2e5e9c43"
+            },
+            "us-west-2": {
+                "PV64": "ami-7f77b31f",
+                "HVM64": "ami-7172b611",
+                "HVMG2": "ami-83b770e3"
+            },
+            "us-west-1": {
+                "PV64": "ami-a2490dc2",
+                "HVM64": "ami-31490d51",
+                "HVMG2": "ami-fd76329d"
+            },
+            "eu-west-1": {
+                "PV64": "ami-4cdd453f",
+                "HVM64": "ami-f9dd458a",
+                "HVMG2": "ami-b9bd25ca"
+            },
+            "eu-central-1": {
+                "PV64": "ami-6527cf0a",
+                "HVM64": "ami-ea26ce85",
+                "HVMG2": "ami-7f04ec10"
+            },
+            "ap-northeast-1": {
+                "PV64": "ami-3e42b65f",
+                "HVM64": "ami-374db956",
+                "HVMG2": "ami-e0ee1981"
+            },
+            "ap-northeast-2": {
+                "PV64": "NOT_SUPPORTED",
+                "HVM64": "ami-2b408b45",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-southeast-1": {
+                "PV64": "ami-df9e4cbc",
+                "HVM64": "ami-a59b49c6",
+                "HVMG2": "ami-0cb5676f"
+            },
+            "ap-southeast-2": {
+                "PV64": "ami-63351d00",
+                "HVM64": "ami-dc361ebf",
+                "HVMG2": "ami-a71c34c4"
+            },
+            "ap-south-1": {
+                "PV64": "NOT_SUPPORTED",
+                "HVM64": "ami-ffbdd790",
+                "HVMG2": "ami-f5b2d89a"
+            },
+            "sa-east-1": {
+                "PV64": "ami-1ad34676",
+                "HVM64": "ami-6dd04501",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "cn-north-1": {
+                "PV64": "ami-77559f1a",
+                "HVM64": "ami-8e6aa0e3",
+                "HVMG2": "NOT_SUPPORTED"
+            }
+        }
+    },
+    "Resources": {
+        "TeamCityServer": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AWSRegionArch2AMI",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        {
+                            "Fn::FindInMap": [
+                                "AWSInstanceType2Arch",
+                                {
+                                    "Ref": "InstanceType"
+                                },
+                                "Arch"
+                            ]
+                        }
+                    ]
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroup"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "service httpd stop \n",
+                                "yum erase httpd httpd-tools apr apr-util \n",
+                                "yum remove php-* \n",
+                                "yum install -y httpd24 php56 \n",
+                                "service httpd start \n",
+                                "chkconfig httpd on \n",
+                                "groupadd www \n",
+                                "usermod -a -G www ec2-user \n",
+                                "chown -R root:www /var/www \n",
+                                "chmod 2775 /var/www \n",
+                                "find /var/www -type d -print |xargs -i chmod 2775 {}; \n",
+                                "find /var/www -type f -print |xargs -i chmod 0664 {}; \n",
+                                "yum -y install  java-1.8.0 \n",
+                                "yum -y install php56-xml php56-xmlrpc php56-soap php56-gd \n",
+                                "yum -y install  java-1.8.0-openjdk-devel \n",
+                                "/usr/sbin/alternatives  --config java <<< ‘2’ \n",
+                                "yum -y remove  java-1.7.0-openjdk \n",
+                                "yum update -y aws-cfn-bootstrap\n",
+                                "# Install TeamCity\n",
+                                "wget https://download.jetbrains.com/teamcity/TeamCity-10.0.5.tar.gz -P /opt\n",
+                                "tar -xzvf /opt/TeamCity-10.0.5.tar.gz -C /opt\n",
+                                "rm -f /opt/TeamCity-10.0.5.tar.gz\n",
+                                "sh /opt/TeamCity/bin/runAll.sh stop\n",
+                                "sh /opt/TeamCity/bin/runAll.sh start\n",
+                                "wget https://s3.amazonaws.com/teamcity-aws-demo/teamcity-service.sh -O /etc/init.d/teamcity\n",
+                                "sudo chmod 755 /etc/init.d/teamcity\n",
+                                "chkconfig teamcity start \n",
+                                "wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.41.tar.gz -P /tmp\n",
+                                "tar -xzvf /tmp/mysql-connector-java-5.1.41.tar.gz -C /tmp\n",
+                                "mkdir -p /root/.BuildServer/lib/jdbc \n",
+                                "cp /tmp/mysql-connector-java-5.1.41/mysql-connector-java-5.1.41-bin.jar /root/.BuildServer/lib/jdbc/ \n",
+                                "# Install the TeamCity CodePipeline plugin\n",
+                                "mkdir -p /root/.BuildServer/plugins\n",
+                                "wget https://s3.amazonaws.com/teamcity-aws-plugins/aws-codepipeline-plugin.zip -P /root/.BuildServer/plugins\n",
+                                "unzip /root/.BuildServer/plugins/aws-codepipeline-plugin.zip -d /root/.BuildServer/plugins/aws-codepipeline-plugin\n",
+                                "rm -f /root/.BuildServer/plugins/aws-codepipeline-plugin.zip\n",
+                                "mkdir -p /root/.BuildServer/config/projects\n",
+                                "wget https://s3.amazonaws.com/teamcity-demo-app/AwsDemoPhpSimpleApp.zip -P /root/.BuildServer/config/projects\n",
+                                "unzip /root/.BuildServer/config/projects/AwsDemoPhpSimpleApp.zip -d /root/.BuildServer/config/projects/\n",
+                                "rm -f /root/.BuildServer/config/projects/AwsDemoPhpSimpleApp.zip\n",
+                                "sh /opt/TeamCity/bin/runAll.sh stop\n",
+                                "sh /opt/TeamCity/bin/runAll.sh start\n",
+                                "## Set up port forwarding\n",
+                                "iptables -A PREROUTING -t nat -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8111\n",
+                                "iptables-save > /etc/sysconfig/iptables\n",
+                                "## Signal CloudFormation complete\n",
+                                "/opt/aws/bin/cfn-signal -e 0 --stack ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                " --resource TeamCityAS ",
+                                " --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "MyDB": {
+            "Type": "AWS::RDS::DBInstance",
+            "Properties": {
+                "DBName": "TC",
+                "AllocatedStorage": "100",
+                "DBInstanceClass": "db.t2.small",
+                "Engine": "MySQL",
+                "EngineVersion": "5.5",
+                "MasterUsername": "tc",
+                "MasterUserPassword": "tcpasswd",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "My SQL Database"
+                    }
+                ]
+            },
+            "DeletionPolicy": "Snapshot"
+        },
+        "SecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "TeamCity Server Security Group",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": {
+                            "Ref": "SSHLocation"
+                        },
+                        "FromPort": "80",
+                        "ToPort": "80"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": {
+                            "Ref": "SSHLocation"
+                        },
+                        "FromPort": "8111",
+                        "ToPort": "8111"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "SSHLocation"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs" : {
+    	"WebsiteURL" : {
+      	"Description" : "URL for newly created TeamCity Server",
+      	"Value" : { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : [ "TeamCityServer", "PublicDnsName" ]}]] }
+    }
+  }
+}

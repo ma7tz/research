@@ -1,681 +1,695 @@
 {
-	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "",
-	"Parameters": {
-		"CidrBlock": {
-			"Description": "The first two CIDR block octets",
-			"Type": "String",
-			"Default": "192.168",
-			"AllowedValues": [
-				"10.0",
-				"10.1",
-				"10.2",
-				"10.3",
-				"192.168"
-			]
-		},
-		"JarAddress": {
-			"Description": "The source of the jar file to start",
-			"Type": "String",
-			"Default": "s3://reservation-development/original-aping-springboot-0.0.1-SNAPSHOT.jar",
-			"AllowedPattern": "s3://.*"
-		},
-		"Certificate": {
-			"Description": "The ARN of the SSL certificate",
-			"Type": "String",
-			"Default": "arn:aws:acm:eu-central-1:862567423531:certificate/712b083f-2991-41ff-b99c-3cde59933cd6",
-			"AllowedPattern": "arn:.*"
-		},
-		"HealthCheckPath": {
-			"Description": "The ARN of the SSL certificate",
-			"Type": "String",
-			"Default": "/greeting?name=ALB"
-		},
-		"KeyName": {
-			"Description": "The EC2 Key Name",
-			"Type": "String",
-			"Default": ""
-		}
-	},
-	"Resources": {
-		"VPC": {
-			"Type": "AWS::EC2::VPC",
-			"Properties": {
-				"CidrBlock": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "CidrBlock"
-							},
-							".0.0/16"
-						]
-					]
-				},
-				"Tags": [
-					{
-						"Key": "Name",
-						"Value": "APING"
-					}
-				]
-			}
-		},
-		"SubnetPublicA": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {
-					"Fn::Select": [
-						0,
-						{
-							"Fn::GetAZs": ""
-						}
-					]
-				},
-				"CidrBlock": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "CidrBlock"
-							},
-							".0.0/22"
-						]
-					]
-				},
-				"MapPublicIpOnLaunch": "true",
-				"VpcId": {
-					"Ref": "VPC"
-				},
-				"Tags": [
-					{
-						"Key": "Name",
-						"Value": "Public A"
-					}
-				]
-			}
-		},
-		"RouteTableSubnetPublicA": {
-			"Type": "AWS::EC2::RouteTable",
-			"Properties": {
-				"VpcId": {
-					"Ref": "VPC"
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "",
+    "Parameters": {
+        "CidrBlock": {
+            "Description": "The first two CIDR block octets",
+            "Type": "String",
+            "Default": "192.168",
+            "AllowedValues": [
+                "10.0",
+                "10.1",
+                "10.2",
+                "10.3",
+                "192.168"
+            ]
+        },
+        "Certificate": {
+            "Description": "The ARN of the SSL certificate",
+            "Type": "String",
+            "Default": "arn:aws:acm:eu-central-1:862567423531:certificate/712b083f-2991-41ff-b99c-3cde59933cd6",
+            "AllowedPattern": "arn:.*"
+        },
+        "HealthCheckPath": {
+            "Description": "The ARN of the SSL certificate",
+            "Type": "String",
+            "Default": "/"
+        },
+        "KeyName": {
+            "Description": "The EC2 Key Name",
+            "Type": "String",
+            "Default": ""
+        }
+    },
+    "Resources": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "CidrBlock"
+                            },
+                            ".0.0/16"
+                        ]
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "dotnet core demo"
+                    }
+                ]
+            }
+        },
+        "SubnetPublicA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "CidrBlock"
+                            },
+                            ".0.0/22"
+                        ]
+                    ]
+                },
+                "MapPublicIpOnLaunch": "true",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Public A"
+                    }
+                ]
+            }
+        },
+        "RouteTableSubnetPublicA": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPublicA": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPublicA"
+                },
+                "SubnetId": {
+                    "Ref": "SubnetPublicA"
+                }
+            }
+        },
+        "RoutePublicA": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPublicA"
+                }
+            }
+        },
+        "EIPPublicA": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "NATGateway1a": {
+            "Type": "AWS::EC2::NatGateway",
+            "DependsOn": "InternetGatewayAttachment",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "EIPPublicA",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "SubnetPublicA"
+                }
+            }
+        },
+        "SubnetPublicB": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        1,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "CidrBlock"
+                            },
+                            ".16.0/20"
+                        ]
+                    ]
+                },
+                "MapPublicIpOnLaunch": "true",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Public B"
+                    }
+                ]
+            }
+        },
+        "RouteTableSubnetPublicB": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPublicB": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPublicB"
+                },
+                "SubnetId": {
+                    "Ref": "SubnetPublicB"
+                }
+            }
+        },
+        "RoutePublicB": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPublicB"
+                }
+            }
+        },
+        "EIPPublicB": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "NATGateway1b": {
+            "Type": "AWS::EC2::NatGateway",
+            "DependsOn": "InternetGatewayAttachment",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "EIPPublicB",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "SubnetPublicB"
+                }
+            }
+        },
+        "SubnetPrivateA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "CidrBlock"
+                            },
+                            ".32.0/20"
+                        ]
+                    ]
+                },
+                "MapPublicIpOnLaunch": "false",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Private A"
+                    }
+                ]
+            }
+        },
+        "RouteTableSubnetPrivateA": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "RoutePrivateA": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NATGateway1a"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPrivateA"
+                }
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPrivateA": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPrivateA"
+                },
+                "SubnetId": {
+                    "Ref": "SubnetPrivateA"
+                }
+            }
+        },
+        "SubnetPrivateB": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        1,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "CidrBlock"
+                            },
+                            ".48.0/20"
+                        ]
+                    ]
+                },
+                "MapPublicIpOnLaunch": "false",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Private B"
+                    }
+                ]
+            }
+        },
+        "RouteTableSubnetPrivateB": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "RoutePrivateB": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NATGateway1b"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPrivateB"
+                }
+            }
+        },
+        "SubnetRouteTableAssociationSubnetPrivateB": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTableSubnetPrivateB"
+                },
+                "SubnetId": {
+                    "Ref": "SubnetPrivateB"
+                }
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {}
+        },
+        "InternetGatewayAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "ApplicationLoadBalancerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "SG-ApplicationLoadBalancer",
+                "GroupName": "SG-ApplicationLoadBalancer",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WebSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "SG-Web",
+                "GroupName": "SG-Web",
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "WebSecurityGroupInboundRule": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Fn::GetAtt": [
+                        "WebSecurityGroup",
+                        "GroupId"
+                    ]
+                },
+                "IpProtocol": "tcp",
+                "ToPort": "1234",
+                "FromPort": "1234",
+                "SourceSecurityGroupId": {
+                    "Fn::GetAtt": [
+                        "ApplicationLoadBalancerSecurityGroup",
+                        "GroupId"
+                    ]
+                }
+            }
+        },
+        "ApplicationLoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+            "Properties": {
+                "Name": "ALB",
+                "Scheme": "internet-facing",
+                "SecurityGroups": [
+                    {
+                        "Ref": "ApplicationLoadBalancerSecurityGroup"
+                    }
+                ],
+                "Subnets": [
+                    {
+                        "Ref": "SubnetPublicA"
+                    },
+                    {
+                        "Ref": "SubnetPublicB"
+                    }
+                ],
+                "IpAddressType": "ipv4"
+            }
+        },
+        "ApplicationLoadBalancerListenerPort443": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "Certificates": [
+                    {
+                        "CertificateArn": {
+                            "Ref": "Certificate"
+                        }
+                    }
+                ],
+                "DefaultActions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "ApplicationLoadBalancerTargetGroup"
+                        }
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ApplicationLoadBalancer"
+                },
+                "Port": 443,
+                "Protocol": "HTTPS"
+            }
+        },
+        "ApplicationLoadBalancerListenerPort80": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "DefaultActions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "ApplicationLoadBalancerTargetGroup"
+                        }
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ApplicationLoadBalancer"
+                },
+                "Port": 80,
+                "Protocol": "HTTP"
+            }
+        },
+        "ApplicationLoadBalancerRule443": {
+            "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+            "Properties": {
+                "Actions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "ApplicationLoadBalancerTargetGroup"
+                        }
+                    }
+                ],
+                "Conditions": [
+                    {
+                        "Field": "path-pattern",
+                        "Values": [
+                            "*"
+                        ]
+                    }
+                ],
+                "ListenerArn": {
+                    "Ref": "ApplicationLoadBalancerListenerPort443"
+                },
+                "Priority": 1
+            }
+        },
+        "ApplicationLoadBalancerRule80": {
+            "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+            "Properties": {
+                "Actions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "ApplicationLoadBalancerTargetGroup"
+                        }
+                    }
+                ],
+                "Conditions": [
+                    {
+                        "Field": "path-pattern",
+                        "Values": [
+                            "*"
+                        ]
+                    }
+                ],
+                "ListenerArn": {
+                    "Ref": "ApplicationLoadBalancerListenerPort80"
+                },
+                "Priority": 1
+            }
+        },
+        "ApplicationLoadBalancerTargetGroup": {
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties": {
+                "HealthCheckPath": {
+                    "Ref": "HealthCheckPath"
+                },
+                "HealthCheckPort": 1234,
+                "Matcher": {
+                    "HttpCode": "200"
+                },
+                "Port": 1234,
+                "Protocol": "HTTP",
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "LaunchConfiguration": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "DependsOn": [
+                "NATGateway1a",
+                "NATGateway1b"
+            ],
+            "Properties": {
+                "AssociatePublicIpAddress": "false",
+                "ImageId": "ami-06a83869",
+                "InstanceType": "t2.nano",
+                "SecurityGroups": [
+                    {
+                        "Ref": "WebSecurityGroup"
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "yum update -y\n",
+                                "wget https://download.microsoft.com/download/5/D/F/5DF4B836-7DFD-4CCF-AC96-101E2A4C7421/dotnet-sdk-2.1.2-linux-x64.tar.gz\n",
+                                "mkdir -p /home/ec2-user/dotnet && tar zxf dotnet-sdk-2.1.2-linux-x64.tar.gz -C /home/ec2-user/dotnet\n",
+                                "export PATH=$PATH:/home/ec2-user/dotnet\n",
+                                "sudo yum install libunwind -y\n",
+                                "aws s3 cp s3://iti-software.beetz.cloud/DemoService.zip /home/ec2-user/\n",
+                                "unzip /home/ec2-user/DemoService.zip -d /home/ec2-user/\n",
+                                "nohup /home/ec2-user/dotnet/dotnet /home/ec2-user/DemoService.dll &\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Roles": [
+                    "S3-Admin-Access"
+                ]
+            }
+        },
+        "AutoScalingGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": [
+                    {
+                        "Fn::Select": [
+                            0,
+                            {
+                                "Fn::GetAZs": ""
+                            }
+                        ]
+                    },
+                    {
+                        "Fn::Select": [
+                            1,
+                            {
+                                "Fn::GetAZs": ""
+                            }
+                        ]
+                    }
+                ],
+                "MinSize": 5,
+                "MaxSize": 10,
+                "DesiredCapacity": 5,
+                "HealthCheckGracePeriod": "10",
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfiguration"
+                },
+                "TargetGroupARNs": [
+                    {
+                        "Ref": "ApplicationLoadBalancerTargetGroup"
+                    }
+                ],
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "SubnetPrivateA"
+                    },
+                    {
+                        "Ref": "SubnetPrivateB"
+                    }
+                ]
+            }
+        },
+        "AutoScalingPolicy": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AutoScalingGroupName": {
+                    "Ref": "AutoScalingGroup"
+                },
+                "PolicyType": "TargetTrackingScaling",
+                "TargetTrackingConfiguration": {
+                    "PredefinedMetricSpecification": {
+                        "PredefinedMetricType": "ASGAverageCPUUtilization"
+                    },
+					"TargetValue": "50"
 				}
-			}
-		},
-		"SubnetRouteTableAssociationSubnetPublicA": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPublicA"
-				},
-				"SubnetId": {
-					"Ref": "SubnetPublicA"
-				}
-			}
-		},
-		"RoutePublicA": {
-			"Type": "AWS::EC2::Route",
-			"Properties": {
-				"DestinationCidrBlock": "0.0.0.0/0",
-				"GatewayId": {
-					"Ref": "InternetGateway"
-				},
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPublicA"
-				}
-			}
-		},
-		"EIPPublicA": {
-			"Type": "AWS::EC2::EIP",
-			"Properties": {
-				"Domain": "vpc"
-			}
-		},
-		"NATGateway1a": {
-			"Type": "AWS::EC2::NatGateway",
-			"DependsOn": "InternetGatewayAttachment",
-			"Properties": {
-				"AllocationId": {
-					"Fn::GetAtt": [
-						"EIPPublicA",
-						"AllocationId"
-					]
-				},
-				"SubnetId": {
-					"Ref": "SubnetPublicA"
-				}
-			}
-		},
-		"SubnetPublicB": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {
-					"Fn::Select": [
-						1,
-						{
-							"Fn::GetAZs": ""
-						}
-					]
-				},
-				"CidrBlock": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "CidrBlock"
-							},
-							".16.0/20"
-						]
-					]
-				},
-				"MapPublicIpOnLaunch": "true",
-				"VpcId": {
-					"Ref": "VPC"
-				},
-				"Tags": [
-					{
-						"Key": "Name",
-						"Value": "Public B"
-					}
-				]
-			}
-		},
-		"RouteTableSubnetPublicB": {
-			"Type": "AWS::EC2::RouteTable",
-			"Properties": {
-				"VpcId": {
-					"Ref": "VPC"
-				}
-			}
-		},
-		"SubnetRouteTableAssociationSubnetPublicB": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPublicB"
-				},
-				"SubnetId": {
-					"Ref": "SubnetPublicB"
-				}
-			}
-		},
-		"RoutePublicB": {
-			"Type": "AWS::EC2::Route",
-			"Properties": {
-				"DestinationCidrBlock": "0.0.0.0/0",
-				"GatewayId": {
-					"Ref": "InternetGateway"
-				},
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPublicB"
-				}
-			}
-		},
-		"EIPPublicB": {
-			"Type": "AWS::EC2::EIP",
-			"Properties": {
-				"Domain": "vpc"
-			}
-		},
-		"NATGateway1b": {
-			"Type": "AWS::EC2::NatGateway",
-			"DependsOn": "InternetGatewayAttachment",
-			"Properties": {
-				"AllocationId": {
-					"Fn::GetAtt": [
-						"EIPPublicB",
-						"AllocationId"
-					]
-				},
-				"SubnetId": {
-					"Ref": "SubnetPublicB"
-				}
-			}
-		},
-		"SubnetPrivateA": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {
-					"Fn::Select": [
-						0,
-						{
-							"Fn::GetAZs": ""
-						}
-					]
-				},
-				"CidrBlock": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "CidrBlock"
-							},
-							".32.0/20"
-						]
-					]
-				},
-				"MapPublicIpOnLaunch": "false",
-				"VpcId": {
-					"Ref": "VPC"
-				},
-				"Tags": [
-					{
-						"Key": "Name",
-						"Value": "Private A"
-					}
-				]
-			}
-		},
-		"RouteTableSubnetPrivateA": {
-			"Type": "AWS::EC2::RouteTable",
-			"Properties": {
-				"VpcId": {
-					"Ref": "VPC"
-				}
-			}
-		},
-		"RoutePrivateA": {
-			"Type": "AWS::EC2::Route",
-			"Properties": {
-				"DestinationCidrBlock": "0.0.0.0/0",
-				"NatGatewayId": {
-					"Ref": "NATGateway1a"
-				},
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPrivateA"
-				}
-			}
-		},
-		"SubnetRouteTableAssociationSubnetPrivateA": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPrivateA"
-				},
-				"SubnetId": {
-					"Ref": "SubnetPrivateA"
-				}
-			}
-		},
-		"SubnetPrivateB": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {
-					"Fn::Select": [
-						1,
-						{
-							"Fn::GetAZs": ""
-						}
-					]
-				},
-				"CidrBlock": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "CidrBlock"
-							},
-							".48.0/20"
-						]
-					]
-				},
-				"MapPublicIpOnLaunch": "false",
-				"VpcId": {
-					"Ref": "VPC"
-				},
-				"Tags": [
-					{
-						"Key": "Name",
-						"Value": "Private A"
-					}
-				]
-			}
-		},
-		"RouteTableSubnetPrivateB": {
-			"Type": "AWS::EC2::RouteTable",
-			"Properties": {
-				"VpcId": {
-					"Ref": "VPC"
-				}
-			}
-		},
-		"RoutePrivateB": {
-			"Type": "AWS::EC2::Route",
-			"Properties": {
-				"DestinationCidrBlock": "0.0.0.0/0",
-				"NatGatewayId": {
-					"Ref": "NATGateway1b"
-				},
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPrivateB"
-				}
-			}
-		},
-		"SubnetRouteTableAssociationSubnetPrivateB": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"RouteTableId": {
-					"Ref": "RouteTableSubnetPrivateB"
-				},
-				"SubnetId": {
-					"Ref": "SubnetPrivateB"
-				}
-			}
-		},
-		"InternetGateway": {
-			"Type": "AWS::EC2::InternetGateway",
-			"Properties": {}
-		},
-		"InternetGatewayAttachment": {
-			"Type": "AWS::EC2::VPCGatewayAttachment",
-			"Properties": {
-				"InternetGatewayId": {
-					"Ref": "InternetGateway"
-				},
-				"VpcId": {
-					"Ref": "VPC"
-				}
-			}
-		},
-		"ApplicationLoadBalancerSecurityGroup": {
-			"Type": "AWS::EC2::SecurityGroup",
-			"Properties": {
-				"GroupDescription": "SG-ApplicationLoadBalancer",
-				"GroupName": "SG-ApplicationLoadBalancer",
-				"VpcId": {
-					"Ref": "VPC"
-				},
-				"SecurityGroupIngress": [
-					{
-						"IpProtocol": "tcp",
-						"FromPort": "80",
-						"ToPort": "80",
-						"CidrIp": "0.0.0.0/0"
-					},
-					{
-						"IpProtocol": "tcp",
-						"FromPort": "443",
-						"ToPort": "443",
-						"CidrIp": "0.0.0.0/0"
-					}
-				]
-			}
-		},
-		"WebSecurityGroup": {
-			"Type": "AWS::EC2::SecurityGroup",
-			"Properties": {
-				"GroupDescription": "SG-Web",
-				"GroupName": "SG-Web",
-				"VpcId": {
-					"Ref": "VPC"
-				}
-			}
-		},
-		"WebSecurityGroupInboundRule": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties": {
-				"GroupId": {
-					"Fn::GetAtt": [
-						"WebSecurityGroup",
-						"GroupId"
-					]
-				},
-				"IpProtocol": "tcp",
-				"ToPort": "8080",
-				"FromPort": "8080",
-				"SourceSecurityGroupId": {
-					"Fn::GetAtt": [
-						"ApplicationLoadBalancerSecurityGroup",
-						"GroupId"
-					]
-				}
-			}
-		},
-		"ApplicationLoadBalancer": {
-			"Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
-			"Properties": {
-				"Name": "ALB",
-				"Scheme": "internet-facing",
-				"SecurityGroups": [
-					{
-						"Ref": "ApplicationLoadBalancerSecurityGroup"
-					}
-				],
-				"Subnets": [
-					{
-						"Ref": "SubnetPublicA"
-					},
-					{
-						"Ref": "SubnetPublicB"
-					}
-				],
-				"IpAddressType": "ipv4"
-			}
-		},
-		"ApplicationLoadBalancerListenerPort443": {
-			"Type": "AWS::ElasticLoadBalancingV2::Listener",
-			"Properties": {
-				"Certificates": [
-					{
-						"CertificateArn": {
-							"Ref": "Certificate"
-						}
-					}
-				],
-				"DefaultActions": [
-					{
-						"Type": "forward",
-						"TargetGroupArn": {
-							"Ref": "ApplicationLoadBalancerTargetGroup"
-						}
-					}
-				],
-				"LoadBalancerArn": {
-					"Ref": "ApplicationLoadBalancer"
-				},
-				"Port": 443,
-				"Protocol": "HTTPS"
-			}
-		},
-		"ApplicationLoadBalancerListenerPort80": {
-			"Type": "AWS::ElasticLoadBalancingV2::Listener",
-			"Properties": {
-				"DefaultActions": [
-					{
-						"Type": "forward",
-						"TargetGroupArn": {
-							"Ref": "ApplicationLoadBalancerTargetGroup"
-						}
-					}
-				],
-				"LoadBalancerArn": {
-					"Ref": "ApplicationLoadBalancer"
-				},
-				"Port": 80,
-				"Protocol": "HTTP"
-			}
-		},
-		"ApplicationLoadBalancerRule443": {
-			"Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
-			"Properties": {
-				"Actions": [
-					{
-						"Type": "forward",
-						"TargetGroupArn": {
-							"Ref": "ApplicationLoadBalancerTargetGroup"
-						}
-					}
-				],
-				"Conditions": [
-					{
-						"Field": "path-pattern",
-						"Values": [
-							"*"
-						]
-					}
-				],
-				"ListenerArn": {
-					"Ref": "ApplicationLoadBalancerListenerPort443"
-				},
-				"Priority": 1
-			}
-		},
-		"ApplicationLoadBalancerRule80": {
-			"Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
-			"Properties": {
-				"Actions": [
-					{
-						"Type": "forward",
-						"TargetGroupArn": {
-							"Ref": "ApplicationLoadBalancerTargetGroup"
-						}
-					}
-				],
-				"Conditions": [
-					{
-						"Field": "path-pattern",
-						"Values": [
-							"*"
-						]
-					}
-				],
-				"ListenerArn": {
-					"Ref": "ApplicationLoadBalancerListenerPort80"
-				},
-				"Priority": 1
-			}
-		},
-		"ApplicationLoadBalancerTargetGroup": {
-			"Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
-			"Properties": {
-				"HealthCheckPath": {
-					"Ref": "HealthCheckPath"
-				},
-				"HealthCheckPort": 8080,
-				"Matcher": {
-					"HttpCode": "200"
-				},
-				"Port": 8080,
-				"Protocol": "HTTP",
-				"VpcId": {
-					"Ref": "VPC"
-				}
-			}
-		},
-		"LaunchConfiguration": {
-			"Type": "AWS::AutoScaling::LaunchConfiguration",
-			"Properties": {
-				"AssociatePublicIpAddress": false,
-				"ImageId": "ami-c7ee5ca8",
-				"InstanceType": "t2.micro",
-				"SecurityGroups": [
-					{
-						"Ref": "WebSecurityGroup"
-					}
-				],
-				"IamInstanceProfile": {
-					"Ref": "InstanceProfile"
-				},
-				"KeyName": {
-					"Ref": "KeyName"
-				},
-				"UserData": {
-					"Fn::Base64": {
-						"Fn::Join": [
-							"",
-							[
-								"#!/bin/bash\n",
-								"yum update -y\n",
-								"yum install java-1.8.0-openjdk.x86_64 -y\n",
-								"aws s3 cp ",
-								{
-									"Ref": "JarAddress"
-								},
-								" /home/ec2-user\n",
-								"java8 -jar /home/ec2-user/*.jar\n"
-							]
-						]
-					}
-				}
-			}
-		},
-		"InstanceProfile": {
-			"Type": "AWS::IAM::InstanceProfile",
-			"Properties": {
-				"Roles": [
-					"S3-Admin-Access"
-				]
-			}
-		},
-		"AutoScalingGroup": {
-			"Type": "AWS::AutoScaling::AutoScalingGroup",
-			"Properties": {
-				"AvailabilityZones": [
-					{
-						"Fn::Select": [
-							0,
-							{
-								"Fn::GetAZs": ""
-							}
-						]
-					},
-					{
-						"Fn::Select": [
-							1,
-							{
-								"Fn::GetAZs": ""
-							}
-						]
-					}
-				],
-				"MinSize": 2,
-				"MaxSize": 4,
-				"DesiredCapacity": 2,
-				"LaunchConfigurationName": {
-					"Ref": "LaunchConfiguration"
-				},
-				"TargetGroupARNs": [
-					{
-						"Ref": "ApplicationLoadBalancerTargetGroup"
-					}
-				],
-				"VPCZoneIdentifier": [
-					{
-						"Ref": "SubnetPrivateA"
-					},
-					{
-						"Ref": "SubnetPrivateB"
-					}
-				]
-			}
-		}
-	},
-	"Outputs": {
-		"VPC": {
-			"Description": "The VpcId of the production VPC",
-			"Value": {
-				"Ref": "VPC"
-			},
-			"Export": {
-				"Name": "Network-Prod-VPC"
-			}
-		},
-		"URL": {
-			"Description": "",
-			"Value": {
-				"Fn::Join": [
-					"",
-					[
-						"http://",
-						{
-							"Fn::GetAtt": [
-								"ApplicationLoadBalancer",
-								"DNSName"
-							]
-						}
-					]
-				]
-			}
-		}
-	}
+            }
+        }
+    },
+    "Outputs": {
+        "VPC": {
+            "Description": "The VpcId of the production VPC",
+            "Value": {
+                "Ref": "VPC"
+            },
+            "Export": {
+                "Name": "Network-Prod-VPC"
+            }
+        },
+        "URL": {
+            "Description": "",
+            "Value": {
+                "Fn::Join": [
+                    "",
+                    [
+                        "http://",
+                        {
+                            "Fn::GetAtt": [
+                                "ApplicationLoadBalancer",
+                                "DNSName"
+                            ]
+                        }
+                    ]
+                ]
+            }
+        }
+    }
 }

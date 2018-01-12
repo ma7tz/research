@@ -14,12 +14,6 @@
                 "192.168"
             ]
         },
-        "Certificate": {
-            "Description": "The ARN of the SSL certificate",
-            "Type": "String",
-            "Default": "arn:aws:acm:eu-central-1:862567423531:certificate/712b083f-2991-41ff-b99c-3cde59933cd6",
-            "AllowedPattern": "arn:.*"
-        },
         "HealthCheckPath": {
             "Description": "The ARN of the SSL certificate",
             "Type": "String",
@@ -29,6 +23,10 @@
             "Description": "The EC2 Key Name",
             "Type": "String",
             "Default": ""
+        },
+        "Version": {
+            "Description": "The environments version number",
+            "Type": "String"
         }
     },
     "Resources": {
@@ -566,6 +564,7 @@
                 "AssociatePublicIpAddress": "false",
                 "ImageId": "ami-06a83869",
                 "InstanceType": "t2.nano",
+                "InstanceMonitoring": true,
                 "SecurityGroups": [
                     {
                         "Ref": "WebSecurityGroup"
@@ -590,7 +589,9 @@
                                 "sudo yum install libunwind -y\n",
                                 "aws s3 cp s3://iti-software.beetz.cloud/DemoService.zip /home/ec2-user/\n",
                                 "unzip /home/ec2-user/DemoService.zip -d /home/ec2-user/\n",
-                                "nohup /home/ec2-user/dotnet/dotnet /home/ec2-user/DemoService.dll &\n"
+                                "echo ", { "Ref": "Version" },  " > /home/ec2-user/version.txt\n",
+                                "cd /home/ec2-user/\n",
+                                "nohup dotnet/dotnet ./DemoService.dll &\n"
                             ]
                         ]
                     }
@@ -626,9 +627,9 @@
                         ]
                     }
                 ],
-                "MinSize": 5,
+                "MinSize": 2,
                 "MaxSize": 10,
-                "DesiredCapacity": 5,
+                "DesiredCapacity": 2,
                 "HealthCheckGracePeriod": "10",
                 "LaunchConfigurationName": {
                     "Ref": "LaunchConfiguration"
@@ -662,7 +663,40 @@
 					"TargetValue": "50"
 				}
             }
-        }
+        },
+        "DNS" : {
+            "Type" : "AWS::Route53::RecordSetGroup",
+            "Properties" : {
+              "HostedZoneName" : "beetz.cloud.",
+              "RecordSets" : [
+                {
+                  "Name" : { "Fn::Join": [ "", [ {"Ref" : "AWS::StackName"}, ".beetz.cloud" ] ] },
+                  "Type" : "A",
+                  "AliasTarget" : {
+                      "HostedZoneId" : { "Fn::GetAtt" : ["ApplicationLoadBalancer", "CanonicalHostedZoneID"] },
+                      "DNSName" : { "Fn::GetAtt" : ["ApplicationLoadBalancer","DNSName"] }
+                  }
+                }
+              ]
+            }
+        },
+        "Certificate": {
+            "Type" : "AWS::CertificateManager::Certificate",
+            "Properties" : {
+              "DomainName" : { "Fn::Join": [ "", [ {"Ref" : "AWS::StackName"}, ".beetz.cloud" ] ] },
+              "DomainValidationOptions" : [{
+                "DomainName" : { "Fn::Join": [ "", [ {"Ref" : "AWS::StackName"}, ".beetz.cloud" ] ] },
+                "ValidationDomain" : "beetz.cloud"
+              }]
+            }
+        },
+        "ListenerCertificate": {
+            "Type" : "AWS::ElasticLoadBalancingV2::ListenerCertificate",
+            "Properties" : {
+              "Certificates" : [ { "CertificateArn": {"Ref": "Certificate" } } ],
+              "ListenerArn" : { "Ref": "ApplicationLoadBalancerListenerPort443" }
+            }
+          }
     },
     "Outputs": {
         "VPC": {
@@ -680,13 +714,7 @@
                 "Fn::Join": [
                     "",
                     [
-                        "http://",
-                        {
-                            "Fn::GetAtt": [
-                                "ApplicationLoadBalancer",
-                                "DNSName"
-                            ]
-                        }
+                        "https://", {"Ref" : "AWS::StackName"}, ".beetz.cloud"
                     ]
                 ]
             }
